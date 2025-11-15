@@ -1,0 +1,26 @@
+# Core web frameworks
+flask==3.0.0
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+
+# ML & Computer Vision
+torch>=2.1.0
+torchvision>=0.16.0
+ultralytics>=8.3.0
+Pillow==10.1.0
+
+# FAISS for similarity search
+faiss-cpu==1.8.0
+
+# Database
+sqlalchemy==2.0.23
+
+# Utilities
+numpy==1.26.2
+requests==2.31.0
+python-dotenv==1.0.0
+
+# Testing (optional)
+pytest==7.4.3
+pytest-asyncio==0.21.1

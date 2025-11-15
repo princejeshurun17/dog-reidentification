@@ -1,0 +1,228 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+ENV/
+env/
+.venv/
+
+# PyCharm
+.idea/
+*.iml
+*.iws
+.idea_modules/
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+
+# Model Files (Large binary files)
+models/*.pt
+models/*.pth
+models/*.onnx
+models/*.h5
+models/*.pb
+*.pt
+*.pth
+*.onnx
+*.weights
+
+# Data Files
+data/uploads/*
+data/*.db
+data/*.db-journal
+data/faiss.index
+data/faiss.index.ids.npy
+!data/uploads/.gitkeep
+
+# Logs and Results
+logs/*.txt
+logs/*.log
+*.log
+quick_test_results.txt
+evaluation_results.txt
+
+# Test Outputs
+tests/temp_*
+tests/*.index
+tests/*.npy
+
+# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*~
+
+# Windows
+$RECYCLE.BIN/
+*.lnk
+
+# Temporary Files
+*.tmp
+*.temp
+temp/
+tmp/
+
+# Database
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# FAISS Index Files
+*.index
+*.ids.npy
+
+# Uploaded Images (optional - uncomment if you don't want to track uploads)
+# uploads/
+# *.jpg
+# *.jpeg
+# *.png
+# *.gif
+
+# PyTorch
+*.pth.tar
+
+# TensorFlow
+*.ckpt
+*.pb
+checkpoint
+
+# Large Dataset Directories
+dataset/
+datasets/
+PetFace/
+data/PetFace/
+
+# Coverage Reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Profiling
+*.prof
+*.lprof
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre
+.pyre/
+
+# Session State
+SESSION_STATE.md
+
+# Backup Files
+*.bak
+*.backup
+*~
+
+# IDE - Eclipse
+.project
+.metadata
+bin/
+tmp/
+*.tmp
+*.bak
+*.swp
+*~.nib
+local.properties
+.settings/
+.loadpath
+.recommenders
+
+# IDE - NetBeans
+nbproject/private/
+build/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+# Compressed Files (if large)
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# Node modules (if using any JS tools)
+node_modules/
+package-lock.json
+yarn.lock
+
+# macOS
+.AppleDouble
+.LSOverride
+._*
+
+# Ngrok
+ngrok.exe
+ngrok.yml
+
+# API Keys and Secrets
+secrets.json
+credentials.json
+*.key
+*.pem
+*.crt
+
+# Cache
+*.cache
+.cache/
+
+# FastAPI/Uvicorn
+*.pid
+
+# Flask
+instance/
+.webassets-cache
+
+# Gunicorn
+gunicorn.pid
+
+# Debug
+debug.log
+error.log
