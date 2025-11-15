@@ -1,8 +1,32 @@
 # Quick Start Guide
 
+## Easy Launch (Recommended) 🚀
+
+### Windows PowerShell
+```powershell
+.\start.ps1
+```
+
+### Windows Command Prompt
+```cmd
+start.bat
+```
+
+Both scripts will:
+1. ✅ Check virtual environment
+2. ✅ Start backend (port 8000)
+3. ✅ Start frontend (port 5000)
+4. ✅ Open in separate windows
+5. ✅ Wait for you to press a key to stop
+
+**Then open:** http://localhost:5000
+
+---
+
 ## Prerequisites
 - Python 3.8+
-- `yolo.pt` and `dog.pt` models in root directory
+- Model files in `models/` directory (`yolo.pt` and `dog.pt`)
+- Virtual environment with dependencies installed
 
 ## Installation
 
@@ -22,7 +46,15 @@ pip install -r requirements.txt
 
 ## Running the System
 
-### Terminal 1 - Start Inference Service
+### Option 1: Automated (Recommended) 🚀
+```powershell
+.\start.ps1
+```
+This starts both services and keeps them running until you press a key.
+
+### Option 2: Manual
+
+#### Terminal 1 - Start Inference Service
 ```powershell
 .\venv\Scripts\Activate.ps1
 python backend\inference_service.py
@@ -30,7 +62,7 @@ python backend\inference_service.py
 
 Wait for: `Inference service ready!`
 
-### Terminal 2 - Start UI Server
+#### Terminal 2 - Start UI Server
 ```powershell
 .\venv\Scripts\Activate.ps1
 python frontend\app.py
@@ -40,6 +72,18 @@ Wait for: `Running on http://127.0.0.1:5000`
 
 ### Access Web Interface
 Open browser: http://127.0.0.1:5000
+
+---
+
+## Stopping Services
+
+### Using Script
+```powershell
+.\stop.ps1
+```
+
+### Manual
+Press `Ctrl+C` in each terminal window
 
 ## Usage
 
