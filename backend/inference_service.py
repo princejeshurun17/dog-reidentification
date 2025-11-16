@@ -28,6 +28,15 @@ from faiss_store import FAISSStore
 YOLO_MODEL_PATH = "models/yolo.pt"
 REID_MODEL_PATH = "models/dog.pt"
 CROP_SIZE = (224, 224)
+
+# YOLO Detection Guardrails
+YOLO_CONFIDENCE_THRESHOLD = 0.30  # Minimum confidence for dog face detection
+MIN_BBOX_SIZE = 50  # Minimum width/height in pixels (filters tiny detections)
+MAX_BBOX_SIZE = 2000  # Maximum width/height (filters unrealistic detections)
+MIN_ASPECT_RATIO = 0.5  # Min width/height ratio (prevents extreme rectangles)
+MAX_ASPECT_RATIO = 2.0  # Max width/height ratio
+
+# Re-ID Guardrails
 SIMILARITY_THRESHOLD = 0.60  # High precision threshold to minimize false positives
 MIN_MARGIN = 0.05  # Minimum difference between top 2 matches for confident decision
 LOW_CONFIDENCE_THRESHOLD = 0.70  # Warn user if match is below this
@@ -143,17 +152,24 @@ async def startup_event():
 
 def detect_dog_faces(image: Image.Image) -> List[Dict[str, Any]]:
     """
-    Detect dog faces using YOLO model.
+    Detect dog faces using YOLO model with validation guardrails.
+    
+    Filters out false positives by checking:
+    - Detection confidence threshold
+    - Bounding box size (too small = noise, too large = unrealistic)
+    - Aspect ratio (prevents extreme rectangles)
     
     Args:
         image: PIL Image
         
     Returns:
-        List of detection dictionaries with bbox, confidence, class_id
+        List of validated detection dictionaries with bbox, confidence, class_id
     """
     results = yolo_model(image, verbose=False)
     
     detections = []
+    rejected_count = 0
+    
     for result in results:
         boxes = result.boxes
         for box in boxes:
@@ -164,12 +180,50 @@ def detect_dog_faces(image: Image.Image) -> List[Dict[str, Any]]:
                 bbox = box.xyxy[0].cpu().numpy().tolist()  # [x1, y1, x2, y2]
                 confidence = float(box.conf[0])
                 
+                # Guardrail 1: Confidence threshold
+                if confidence < YOLO_CONFIDENCE_THRESHOLD:
+                    print(f"[YOLO REJECTED] Low confidence: {confidence:.3f} < {YOLO_CONFIDENCE_THRESHOLD}")
+                    rejected_count += 1
+                    continue
+                
+                # Calculate bbox dimensions
+                x1, y1, x2, y2 = bbox
+                width = x2 - x1
+                height = y2 - y1
+                aspect_ratio = width / height if height > 0 else 0
+                
+                # Guardrail 2: Minimum size (filter noise)
+                if width < MIN_BBOX_SIZE or height < MIN_BBOX_SIZE:
+                    print(f"[YOLO REJECTED] Too small: {width:.0f}x{height:.0f} < {MIN_BBOX_SIZE}")
+                    rejected_count += 1
+                    continue
+                
+                # Guardrail 3: Maximum size (filter unrealistic)
+                if width > MAX_BBOX_SIZE or height > MAX_BBOX_SIZE:
+                    print(f"[YOLO REJECTED] Too large: {width:.0f}x{height:.0f} > {MAX_BBOX_SIZE}")
+                    rejected_count += 1
+                    continue
+                
+                # Guardrail 4: Aspect ratio (filter extreme rectangles)
+                if aspect_ratio < MIN_ASPECT_RATIO or aspect_ratio > MAX_ASPECT_RATIO:
+                    print(f"[YOLO REJECTED] Invalid aspect ratio: {aspect_ratio:.2f} (valid: {MIN_ASPECT_RATIO}-{MAX_ASPECT_RATIO})")
+                    rejected_count += 1
+                    continue
+                
+                # Passed all guardrails
+                print(f"[YOLO ACCEPTED] Confidence: {confidence:.3f}, Size: {width:.0f}x{height:.0f}, Ratio: {aspect_ratio:.2f}")
                 detections.append({
                     "bbox": bbox,
                     "confidence": confidence,
                     "class_id": class_id,
-                    "class_name": "face"
+                    "class_name": "face",
+                    "width": width,
+                    "height": height,
+                    "aspect_ratio": aspect_ratio
                 })
+    
+    if rejected_count > 0:
+        print(f"[YOLO SUMMARY] Accepted: {len(detections)}, Rejected: {rejected_count}")
     
     return detections
 
