@@ -157,7 +157,8 @@ def enroll_dog():
         # Trigger inference service to reload FAISS index
         try:
             print(f"[ENROLL] Reloading inference service FAISS index...")
-            reload_response = requests.post(f"{INFERENCE_SERVICE_URL}/reload", timeout=5)
+            # Increased timeout for Raspberry Pi
+            reload_response = requests.post(f"{INFERENCE_SERVICE_URL}/reload", timeout=15)
             if reload_response.status_code == 200:
                 print(f"[ENROLL] ✓ Inference service FAISS index reloaded")
             else:
@@ -184,7 +185,8 @@ def get_dogs():
     Fetch list of all enrolled dogs from inference service.
     """
     try:
-        response = requests.get(f"{INFERENCE_SERVICE_URL}/dogs", timeout=10)
+        # Increased timeout for Raspberry Pi
+        response = requests.get(f"{INFERENCE_SERVICE_URL}/dogs", timeout=20)
         return jsonify(response.json())
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -197,7 +199,8 @@ def get_history():
     """
     try:
         limit = request.args.get('limit', 10, type=int)
-        response = requests.get(f"{INFERENCE_SERVICE_URL}/history?limit={limit}", timeout=10)
+        # Increased timeout for Raspberry Pi
+        response = requests.get(f"{INFERENCE_SERVICE_URL}/history?limit={limit}", timeout=20)
         return jsonify(response.json())
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -209,7 +212,8 @@ def get_stats():
     Fetch system statistics from inference service.
     """
     try:
-        response = requests.get(f"{INFERENCE_SERVICE_URL}/stats", timeout=10)
+        # Increased timeout for Raspberry Pi
+        response = requests.get(f"{INFERENCE_SERVICE_URL}/stats", timeout=20)
         return jsonify(response.json())
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
