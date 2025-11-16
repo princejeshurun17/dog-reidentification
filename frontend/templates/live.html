@@ -869,15 +869,20 @@
                 // Convert to blob
                 const blob = await new Promise(resolve => tempCanvas.toBlob(resolve, 'image/jpeg', 0.8));
 
-                // Send to server
+                // Send to server with timeout for Raspberry Pi
                 const formData = new FormData();
                 formData.append('file', blob, 'frame.jpg');
 
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 seconds
+
                 const response = await fetch('/api/process', {
                     method: 'POST',
-                    body: formData
+                    body: formData,
+                    signal: controller.signal
                 });
 
+                clearTimeout(timeoutId);
                 const result = await response.json();
 
                 if (result.success) {
@@ -911,15 +916,20 @@
 
                 const blob = await new Promise(resolve => tempCanvas.toBlob(resolve, 'image/jpeg', 0.95));
 
-                // Send to server
+                // Send to server with timeout for Raspberry Pi
                 const formData = new FormData();
                 formData.append('file', blob, 'capture.jpg');
 
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 seconds
+
                 const response = await fetch('/api/process', {
                     method: 'POST',
-                    body: formData
+                    body: formData,
+                    signal: controller.signal
                 });
 
+                clearTimeout(timeoutId);
                 const result = await response.json();
 
                 if (result.success) {
@@ -1191,14 +1201,19 @@
                     image_path: ''
                 };
 
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 seconds for enrollment
+
                 const enrollResponse = await fetch('/api/enroll', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify(enrollData)
+                    body: JSON.stringify(enrollData),
+                    signal: controller.signal
                 });
 
+                clearTimeout(timeoutId);
                 const result = await enrollResponse.json();
                 console.log('[REGISTER] Response:', result);
 

@@ -499,11 +499,17 @@
             formData.append('file', file);
 
             try {
+                // Set timeout to 90 seconds for Raspberry Pi (processing can take 8-12 seconds)
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 seconds
+
                 const response = await fetch('/api/process', {
                     method: 'POST',
-                    body: formData
+                    body: formData,
+                    signal: controller.signal
                 });
 
+                clearTimeout(timeoutId);
                 const result = await response.json();
 
                 document.getElementById('spinner').style.display = 'none';
@@ -518,6 +524,11 @@
             } catch (error) {
                 document.getElementById('spinner').style.display = 'none';
                 showNotification('Error: ' + error.message, 'error');
+                
+                // Handle timeout specifically
+                if (error.name === 'AbortError') {
+                    showNotification('Request timeout - Raspberry Pi processing took too long. Please try again.', 'error');
+                }
             }
         }
 
