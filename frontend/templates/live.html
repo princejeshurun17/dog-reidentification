@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Detection - Dog Re-ID</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .nav-btn:hover {
+            background: white;
+            color: #667eea;
+        }
+
+        .main-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px;
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            max-width: 200px;
+            padding: 15px 30px;
+            border: 3px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .mode-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .mode-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .video-container {
+            position: relative;
+            max-width: 100%;
+            margin: 0 auto;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #000;
+        }
+
+        #videoElement {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        #canvasElement {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .control-btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .control-btn.start {
+            background: #10b981;
+            color: white;
+        }
+
+        .control-btn.stop {
+            background: #ef4444;
+            color: white;
+        }
+
+        .control-btn.capture {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .control-btn.switch {
+            background: #8b5cf6;
+            color: white;
+        }
+
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .control-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .stats-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            opacity: 0.9;
+            margin-top: 5px;
+            font-size: 0.9em;
+        }
+
+        .detections-list {
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .detection-item {
+            background: #f8f9ff;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .detection-item.match {
+            border-left-color: #10b981;
+        }
+
+        .detection-item.unknown {
+            border-left-color: #f59e0b;
+        }
+
+        .confidence-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .confidence-high {
+            background: #10b981;
+            color: white;
+        }
+
+        .confidence-medium {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .confidence-low {
+            background: #ef4444;
+            color: white;
+        }
+
+        .settings-panel {
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .setting-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .setting-row label {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .setting-row input[type="range"] {
+            width: 200px;
+        }
+
+        .setting-row input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            display: none;
+            z-index: 2000;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .notification.success {
+            background: #10b981;
+        }
+
+        .notification.error {
+            background: #ef4444;
+        }
+
+        .notification.info {
+            background: #3b82f6;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .recording {
+            animation: pulse 1.5s infinite;
+        }
+
+        .capture-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            z-index: 3000;
+            overflow-y: auto;
+        }
+
+        .capture-overlay.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .capture-result {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 900px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .close-overlay {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 1.5em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .close-overlay:hover {
+            background: #dc2626;
+            transform: scale(1.1);
+        }
+
+        .capture-result h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .captured-image-container {
+            position: relative;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .captured-image {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .detection-results {
+            margin-top: 20px;
+        }
+
+        .dog-card {
+            background: #f8f9ff;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 5px solid #667eea;
+        }
+
+        .dog-card.matched {
+            border-left-color: #10b981;
+            background: #f0fdf4;
+        }
+
+        .dog-card.unknown {
+            border-left-color: #f59e0b;
+            background: #fffbeb;
+        }
+
+        .dog-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .dog-name {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .dog-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .info-label {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .cropped-face {
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 10px;
+            border: 3px solid #667eea;
+        }
+
+        .registration-section {
+            background: #fffbeb;
+            border: 2px solid #f59e0b;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .registration-section h3 {
+            color: #f59e0b;
+            margin-bottom: 15px;
+        }
+
+        .register-form {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .register-btn {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .register-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .register-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .no-detection {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .no-detection-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎥 Live Dog Detection & Re-ID</h1>
+            <p>Real-time face detection and identification</p>
+        </div>
+
+        <div class="nav-buttons">
+            <a href="/" class="nav-btn">📸 Upload Mode</a>
+            <a href="/live" class="nav-btn" style="background: white; color: #667eea;">🎥 Live Mode</a>
+        </div>
+
+        <div class="main-card">
+            <div class="mode-selector">
+                <button class="mode-btn active" id="streamBtn" onclick="selectMode('stream')">
+                    🎥 Live Stream
+                </button>
+                <button class="mode-btn" id="captureBtn" onclick="selectMode('capture')">
+                    📷 Capture Photo
+                </button>
+            </div>
+
+            <div class="video-container" id="videoContainer">
+                <video id="videoElement" autoplay playsinline></video>
+                <canvas id="canvasElement"></canvas>
+            </div>
+
+            <div class="controls">
+                <button class="control-btn start" id="startBtn" onclick="startCamera()">
+                    ▶️ Start Camera
+                </button>
+                <button class="control-btn stop" id="stopBtn" onclick="stopCamera()" disabled>
+                    ⏹️ Stop Camera
+                </button>
+                <button class="control-btn switch" id="switchCameraBtn" onclick="switchCamera()" disabled>
+                    🔄 Switch Camera
+                </button>
+                <button class="control-btn capture" id="takePhotoBtn" onclick="captureFrame()" disabled style="display: none;">
+                    📸 Take Photo
+                </button>
+            </div>
+
+            <div class="stats-panel">
+                <div class="stat-card">
+                    <div class="stat-value" id="fpsValue">0</div>
+                    <div class="stat-label">FPS</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="detectionCount">0</div>
+                    <div class="stat-label">Dogs Detected</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="latencyValue">0ms</div>
+                    <div class="stat-label">Latency</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="matchCount">0</div>
+                    <div class="stat-label">Matches Found</div>
+                </div>
+            </div>
+
+            <div class="settings-panel">
+                <h3>⚙️ Stream Settings</h3>
+                <div class="setting-row">
+                    <label for="frameRate">Update Rate (FPS):</label>
+                    <div>
+                        <input type="range" id="frameRate" min="1" max="10" value="3" step="1">
+                        <span id="frameRateValue">3</span> FPS
+                    </div>
+                </div>
+                <div class="setting-row">
+                    <label for="showBoxes">Show Bounding Boxes:</label>
+                    <input type="checkbox" id="showBoxes" checked>
+                </div>
+                <div class="setting-row">
+                    <label for="showLabels">Show Labels:</label>
+                    <input type="checkbox" id="showLabels" checked>
+                </div>
+            </div>
+
+            <div class="detections-list" id="detectionsList">
+                <h3>Recent Detections</h3>
+                <div id="detectionsContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="notification" class="notification"></div>
+
+    <div id="captureOverlay" class="capture-overlay">
+        <div class="capture-result">
+            <button class="close-overlay" onclick="closeCaptureOverlay()">×</button>
+            <h2>📸 Capture Results</h2>
+            
+            <div class="captured-image-container">
+                <img id="capturedImage" class="captured-image" alt="Captured frame">
+            </div>
+
+            <div class="detection-results" id="captureDetectionResults">
+                <!-- Results will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentMode = 'stream';
+        let stream = null;
+        let isProcessing = false;
+        let processInterval = null;
+        let frameCount = 0;
+        let lastFpsUpdate = Date.now();
+        let detectionHistory = [];
+        let availableCameras = [];
+        let currentCameraIndex = 0;
+        let facingMode = 'user'; // 'user' for front camera, 'environment' for back camera
+        let currentCaptureDetections = []; // Store detection data for registration
+
+        const video = document.getElementById('videoElement');
+        const canvas = document.getElementById('canvasElement');
+        const ctx = canvas.getContext('2d');
+
+        // Frame rate control
+        document.getElementById('frameRate').addEventListener('input', (e) => {
+            const fps = e.target.value;
+            document.getElementById('frameRateValue').textContent = fps;
+            if (processInterval) {
+                stopProcessing();
+                startProcessing();
+            }
+        });
+
+        function selectMode(mode) {
+            currentMode = mode;
+            document.getElementById('streamBtn').classList.toggle('active', mode === 'stream');
+            document.getElementById('captureBtn').classList.toggle('active', mode === 'capture');
+            document.getElementById('takePhotoBtn').style.display = mode === 'capture' ? 'inline-block' : 'none';
+            
+            if (stream) {
+                stopProcessing();
+                if (mode === 'stream') {
+                    startProcessing();
+                }
+            }
+        }
+
+        async function enumerateCameras() {
+            try {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                availableCameras = devices.filter(device => device.kind === 'videoinput');
+                console.log(`Found ${availableCameras.length} camera(s)`);
+            } catch (error) {
+                console.error('Error enumerating cameras:', error);
+            }
+        }
+
+        async function startCamera(deviceId = null) {
+            try {
+                // Enumerate cameras on first start
+                if (availableCameras.length === 0) {
+                    await enumerateCameras();
+                }
+
+                const constraints = {
+                    video: {
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    }
+                };
+
+                // Use specific device ID if provided, otherwise use facingMode
+                if (deviceId) {
+                    constraints.video.deviceId = { exact: deviceId };
+                } else if (availableCameras.length > 0) {
+                    constraints.video.deviceId = { exact: availableCameras[currentCameraIndex].deviceId };
+                } else {
+                    constraints.video.facingMode = facingMode;
+                }
+
+                stream = await navigator.mediaDevices.getUserMedia(constraints);
+
+                video.srcObject = stream;
+                video.onloadedmetadata = () => {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                };
+
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('stopBtn').disabled = false;
+                document.getElementById('takePhotoBtn').disabled = false;
+                document.getElementById('switchCameraBtn').disabled = availableCameras.length <= 1;
+
+                const cameraName = availableCameras[currentCameraIndex]?.label || 'Default Camera';
+                showNotification(`Camera started: ${cameraName}`, 'success');
+
+                if (currentMode === 'stream') {
+                    startProcessing();
+                }
+            } catch (error) {
+                console.error('Error accessing camera:', error);
+                showNotification('Failed to access camera: ' + error.message, 'error');
+            }
+        }
+
+        async function switchCamera() {
+            if (availableCameras.length <= 1) {
+                showNotification('No other cameras available', 'info');
+                return;
+            }
+
+            // Stop current stream
+            const wasProcessing = processInterval !== null;
+            stopCamera();
+
+            // Switch to next camera
+            currentCameraIndex = (currentCameraIndex + 1) % availableCameras.length;
+            
+            // Toggle facing mode for mobile devices
+            facingMode = facingMode === 'user' ? 'environment' : 'user';
+
+            // Start camera with new device
+            await startCamera();
+
+            // Resume processing if it was running
+            if (wasProcessing && currentMode === 'stream') {
+                startProcessing();
+            }
+        }
+
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+
+            stopProcessing();
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+            document.getElementById('takePhotoBtn').disabled = true;
+            document.getElementById('switchCameraBtn').disabled = true;
+
+            showNotification('Camera stopped', 'info');
+        }
+
+        function startProcessing() {
+            if (currentMode !== 'stream') return;
+
+            const fps = parseInt(document.getElementById('frameRate').value);
+            const interval = 1000 / fps;
+
+            processInterval = setInterval(() => {
+                if (!isProcessing) {
+                    processFrame();
+                }
+            }, interval);
+
+            document.getElementById('startBtn').classList.add('recording');
+        }
+
+        function stopProcessing() {
+            if (processInterval) {
+                clearInterval(processInterval);
+                processInterval = null;
+            }
+            document.getElementById('startBtn').classList.remove('recording');
+        }
+
+        async function processFrame() {
+            if (!video.videoWidth || !video.videoHeight) return;
+
+            isProcessing = true;
+            const startTime = Date.now();
+
+            try {
+                // Capture current frame
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = video.videoWidth;
+                tempCanvas.height = video.videoHeight;
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCtx.drawImage(video, 0, 0);
+
+                // Convert to blob
+                const blob = await new Promise(resolve => tempCanvas.toBlob(resolve, 'image/jpeg', 0.8));
+
+                // Send to server
+                const formData = new FormData();
+                formData.append('file', blob, 'frame.jpg');
+
+                const response = await fetch('/api/process', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    const latency = Date.now() - startTime;
+                    updateStats(result, latency);
+                    drawDetections(result.detections);
+                    updateDetectionsList(result.detections);
+                }
+            } catch (error) {
+                console.error('Processing error:', error);
+            } finally {
+                isProcessing = false;
+            }
+        }
+
+        async function captureFrame() {
+            if (!video.videoWidth || !video.videoHeight) return;
+
+            const startTime = Date.now();
+
+            try {
+                // Capture frame
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = video.videoWidth;
+                tempCanvas.height = video.videoHeight;
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCtx.drawImage(video, 0, 0);
+
+                // Get image as data URL for display
+                const imageDataUrl = tempCanvas.toDataURL('image/jpeg', 0.95);
+
+                const blob = await new Promise(resolve => tempCanvas.toBlob(resolve, 'image/jpeg', 0.95));
+
+                // Send to server
+                const formData = new FormData();
+                formData.append('file', blob, 'capture.jpg');
+
+                const response = await fetch('/api/process', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    const latency = Date.now() - startTime;
+                    updateStats(result, latency);
+                    updateDetectionsList(result.detections);
+                    showCaptureOverlay(imageDataUrl, result.detections, latency);
+                }
+            } catch (error) {
+                console.error('Capture error:', error);
+                showNotification('Failed to capture photo', 'error');
+            }
+        }
+
+        function drawDetections(detections) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (!document.getElementById('showBoxes').checked) return;
+
+            const showLabels = document.getElementById('showLabels').checked;
+            const scaleX = canvas.width / video.videoWidth;
+            const scaleY = canvas.height / video.videoHeight;
+
+            detections.forEach(detection => {
+                const bbox = detection.bbox;
+                const x = bbox[0] * scaleX;
+                const y = bbox[1] * scaleY;
+                const width = (bbox[2] - bbox[0]) * scaleX;
+                const height = (bbox[3] - bbox[1]) * scaleY;
+
+                // Determine color based on match
+                let color = '#f59e0b'; // Unknown (orange)
+                let label = 'Unknown Dog';
+                
+                if (detection.matches && detection.matches.length > 0) {
+                    const match = detection.matches[0];
+                    const confidence = match.confidence_level;
+                    
+                    if (confidence === 'high') {
+                        color = '#10b981'; // Green
+                    } else if (confidence === 'medium-high') {
+                        color = '#3b82f6'; // Blue
+                    } else {
+                        color = '#f59e0b'; // Orange
+                    }
+                    
+                    label = match.name;
+                }
+
+                // Draw bounding box
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 3;
+                ctx.strokeRect(x, y, width, height);
+
+                if (showLabels) {
+                    // Draw label background
+                    ctx.fillStyle = color;
+                    const labelText = `${label} (${(detection.confidence * 100).toFixed(0)}%)`;
+                    ctx.font = 'bold 16px Arial';
+                    const textWidth = ctx.measureText(labelText).width;
+                    ctx.fillRect(x, y - 30, textWidth + 10, 30);
+
+                    // Draw label text
+                    ctx.fillStyle = 'white';
+                    ctx.fillText(labelText, x + 5, y - 8);
+
+                    // Draw similarity if match
+                    if (detection.matches && detection.matches.length > 0) {
+                        const similarity = (detection.matches[0].similarity * 100).toFixed(1);
+                        const simText = `${similarity}% match`;
+                        ctx.font = '14px Arial';
+                        ctx.fillText(simText, x + 5, y + height + 20);
+                    }
+                }
+            });
+
+            frameCount++;
+            const now = Date.now();
+            if (now - lastFpsUpdate >= 1000) {
+                document.getElementById('fpsValue').textContent = frameCount;
+                frameCount = 0;
+                lastFpsUpdate = now;
+            }
+        }
+
+        function updateStats(result, latency) {
+            const detections = result.detections || [];
+            const matchCount = detections.filter(d => d.matches && d.matches.length > 0).length;
+
+            document.getElementById('detectionCount').textContent = detections.length;
+            document.getElementById('latencyValue').textContent = latency + 'ms';
+            document.getElementById('matchCount').textContent = matchCount;
+        }
+
+        function updateDetectionsList(detections) {
+            const container = document.getElementById('detectionsContainer');
+            
+            detections.forEach(detection => {
+                const timestamp = new Date().toLocaleTimeString();
+                const div = document.createElement('div');
+                
+                if (detection.matches && detection.matches.length > 0) {
+                    const match = detection.matches[0];
+                    const confidenceClass = `confidence-${match.confidence_level.replace('-', '')}`;
+                    
+                    div.className = 'detection-item match';
+                    div.innerHTML = `
+                        <strong>${timestamp}</strong> - 
+                        <strong>${match.name}</strong>
+                        <span class="confidence-badge ${confidenceClass}">${(match.similarity * 100).toFixed(1)}%</span>
+                        <br>
+                        <small>${match.confidence_text}</small>
+                    `;
+                } else {
+                    div.className = 'detection-item unknown';
+                    div.innerHTML = `
+                        <strong>${timestamp}</strong> - 
+                        <strong>Unknown Dog</strong>
+                        <span class="confidence-badge confidence-low">No match</span>
+                        <br>
+                        <small>YOLO Confidence: ${(detection.confidence * 100).toFixed(1)}%</small>
+                    `;
+                }
+
+                container.insertBefore(div, container.firstChild);
+
+                // Keep only last 10
+                while (container.children.length > 10) {
+                    container.removeChild(container.lastChild);
+                }
+            });
+        }
+
+        function showCaptureOverlay(imageDataUrl, detections, latency) {
+            // Store detections for registration
+            currentCaptureDetections = detections;
+            
+            // Display captured image
+            document.getElementById('capturedImage').src = imageDataUrl;
+
+            // Generate detection results HTML
+            const resultsContainer = document.getElementById('captureDetectionResults');
+            
+            if (detections.length === 0) {
+                resultsContainer.innerHTML = `
+                    <div class="no-detection">
+                        <div class="no-detection-icon">🐕</div>
+                        <h3>No Dogs Detected</h3>
+                        <p>No dog faces were detected in this image. Please try again.</p>
+                    </div>
+                `;
+            } else {
+                resultsContainer.innerHTML = detections.map((detection, index) => {
+                    if (detection.matches && detection.matches.length > 0) {
+                        // Matched dog
+                        const match = detection.matches[0];
+                        const confidenceClass = `confidence-${match.confidence_level.replace('-', '')}`;
+                        return `
+                            <div class="dog-card matched">
+                                <div class="dog-header">
+                                    <div class="dog-name">✅ ${match.name}</div>
+                                    <span class="confidence-badge ${confidenceClass}">${(match.similarity * 100).toFixed(1)}%</span>
+                                </div>
+                                <div class="dog-info">
+                                    <div class="info-item">
+                                        <span class="info-label">Confidence</span>
+                                        <span class="info-value">${match.confidence_text}</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">Similarity</span>
+                                        <span class="info-value">${(match.similarity * 100).toFixed(1)}%</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">Margin</span>
+                                        <span class="info-value">${match.margin.toFixed(3)}</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">Detection Confidence</span>
+                                        <span class="info-value">${(detection.confidence * 100).toFixed(1)}%</span>
+                                    </div>
+                                </div>
+                                ${detection.cropped_image ? `
+                                    <div style="text-align: center; margin-top: 15px;">
+                                        <img src="data:image/jpeg;base64,${detection.cropped_image}" class="cropped-face" alt="Dog face">
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `;
+                    } else {
+                        // Unknown dog - show registration form
+                        return `
+                            <div class="dog-card unknown">
+                                <div class="dog-header">
+                                    <div class="dog-name">❓ Unknown Dog</div>
+                                    <span class="confidence-badge confidence-low">No Match</span>
+                                </div>
+                                <div class="dog-info">
+                                    <div class="info-item">
+                                        <span class="info-label">Detection Confidence</span>
+                                        <span class="info-value">${(detection.confidence * 100).toFixed(1)}%</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">Status</span>
+                                        <span class="info-value">Not Registered</span>
+                                    </div>
+                                </div>
+                                ${detection.cropped_image ? `
+                                    <div style="text-align: center; margin: 15px 0;">
+                                        <img src="data:image/jpeg;base64,${detection.cropped_image}" class="cropped-face" alt="Dog face">
+                                    </div>
+                                ` : ''}
+                                <div class="registration-section">
+                                    <h3>🐕 Register This Dog</h3>
+                                    <p style="margin-bottom: 15px; color: #666;">This dog is not in the database. Register it now!</p>
+                                    <div class="register-form">
+                                        <div class="form-group">
+                                            <label>Dog Name:</label>
+                                            <input type="text" id="dogName_${index}" placeholder="Enter dog's name" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Owner Name:</label>
+                                            <input type="text" id="ownerName_${index}" placeholder="Enter owner's name" required>
+                                        </div>
+                                        <button class="register-btn" onclick="registerDog(${index})">
+                                            ✅ Register Dog
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                }).join('');
+            }
+
+            // Show overlay
+            document.getElementById('captureOverlay').classList.add('show');
+        }
+
+        function closeCaptureOverlay() {
+            document.getElementById('captureOverlay').classList.remove('show');
+        }
+
+        async function registerDog(index) {
+            const dogName = document.getElementById(`dogName_${index}`).value.trim();
+            const ownerName = document.getElementById(`ownerName_${index}`).value.trim();
+
+            if (!dogName || !ownerName) {
+                showNotification('Please enter both dog name and owner name', 'error');
+                return;
+            }
+
+            // Get detection data
+            const detection = currentCaptureDetections[index];
+            if (!detection || !detection.embedding) {
+                showNotification('Error: Embedding data not found', 'error');
+                console.error('Detection data:', detection);
+                return;
+            }
+
+            console.log('[REGISTER] Registering dog:', dogName, 'with embedding length:', detection.embedding.length);
+
+            try {
+                // Send registration request with embedding data
+                const enrollData = {
+                    name: dogName,
+                    contact_info: ownerName,
+                    notes: '',
+                    embedding: detection.embedding,
+                    image_path: ''
+                };
+
+                const enrollResponse = await fetch('/api/enroll', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(enrollData)
+                });
+
+                const result = await enrollResponse.json();
+                console.log('[REGISTER] Response:', result);
+
+                if (result.success) {
+                    showNotification(`Successfully registered ${dogName}!`, 'success');
+                    closeCaptureOverlay();
+                } else {
+                    showNotification('Registration failed: ' + result.error, 'error');
+                }
+            } catch (error) {
+                console.error('[REGISTER] Error:', error);
+                showNotification('Failed to register dog: ' + error.message, 'error');
+            }
+        }
+
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.style.display = 'block';
+
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            stopCamera();
+        });
+    </script>
+</body>
+</html>

@@ -34,6 +34,12 @@ def index():
     return render_template('index.html')
 
 
+@app.route('/live')
+def live():
+    """Render live detection page."""
+    return render_template('live.html')
+
+
 @app.route('/api/process', methods=['POST'])
 def process_image():
     """

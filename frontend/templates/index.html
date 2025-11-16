@@ -338,13 +338,47 @@
             opacity: 0.9;
             margin-top: 5px;
         }
+
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s;
+            display: inline-block;
+        }
+
+        .nav-btn:hover {
+            background: white;
+            color: #667eea;
+        }
+
+        .nav-btn.active {
+            background: white;
+            color: #667eea;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>Dog Re-Identification System</h1>
+            <h1>🐕 Dog Re-Identification System</h1>
             <p>Upload a dog image to identify or register new dogs</p>
+        </div>
+
+        <div class="nav-buttons">
+            <a href="/" class="nav-btn active">📸 Upload Mode</a>
+            <a href="/live" class="nav-btn">🎥 Live Mode</a>
         </div>
 
         <div class="main-card">
