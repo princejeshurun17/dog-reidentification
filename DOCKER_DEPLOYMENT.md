@@ -221,7 +221,11 @@ docker compose ps
 # dog-reid-backend      Up 30 seconds       0.0.0.0:8000->8000/tcp
 # dog-reid-frontend     Up 20 seconds       0.0.0.0:5000->5000/tcp
 
-# Check logs
+# Check logsadmin@raspberrypi:~/dog-reidentification $ docker compose ps
+WARN[0000] /home/admin/dog-reidentification/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion
+NAME                IMAGE                           COMMAND                  SERVICE    CREATED          STATUS                      PORTS
+dog-reid-backend    dog-reidentification-backend    "python backend/infe…"   backend    18 minutes ago   Up 18 minutes (healthy)     5000/tcp, 0.0.0.0:8000->8000/tcp, [::]:8000->8000/tcp
+dog-reid-frontend   dog-reidentification-frontend   "python frontend/app…"   frontend   18 minutes ago   Up 16 minutes (unhealthy)   0.0.0.0:5000->5000/tcp, [::]:5000->5000/tcp, 8000/tcp
 docker compose logs backend
 docker compose logs frontend
 
