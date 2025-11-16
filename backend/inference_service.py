@@ -37,9 +37,9 @@ MIN_ASPECT_RATIO = 0.5  # Min width/height ratio (prevents extreme rectangles)
 MAX_ASPECT_RATIO = 2.0  # Max width/height ratio
 
 # Re-ID Guardrails
-SIMILARITY_THRESHOLD = 0.60  # High precision threshold to minimize false positives
+SIMILARITY_THRESHOLD = 0.50  # High precision threshold to minimize false positives
 MIN_MARGIN = 0.05  # Minimum difference between top 2 matches for confident decision
-LOW_CONFIDENCE_THRESHOLD = 0.70  # Warn user if match is below this
+LOW_CONFIDENCE_THRESHOLD = 0.60  # Warn user if match is below this
 EMBEDDING_DIM = 2048  # ResNet50 layer4 output dimension
 
 

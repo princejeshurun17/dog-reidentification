@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+docs/
+
+# Logs (will be mounted as volume)
+logs/*.txt
+logs/yolo_evaluation/
+
+# Data (will be mounted as volume)
+data/uploads/*
+data/*.db
+data/*.index
+data/*.npy
+
+# Tests
+tests/
+
+# Scripts
+scripts/
+
+# Configs
+*.ps1
+*.bat
+start.*
+stop.*

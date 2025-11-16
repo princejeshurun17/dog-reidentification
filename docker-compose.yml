@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  # Backend inference service
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dog-reid-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./logs:/app/logs
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: python backend/inference_service.py
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - dog-reid-network
+
+  # Frontend Flask service
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dog-reid-frontend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./logs:/app/logs
+    environment:
+      - PYTHONUNBUFFERED=1
+      - BACKEND_URL=http://backend:8000
+    command: python frontend/app.py
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - dog-reid-network
+
+networks:
+  dog-reid-network:
+    driver: bridge
+
+volumes:
+  data:
+  models:
+  logs:

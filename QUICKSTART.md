@@ -87,10 +87,32 @@ Press `Ctrl+C` in each terminal window
 
 ## Usage
 
+### Upload Mode (Traditional)
 1. **Upload Image**: Click "Choose Image" or drag-and-drop
 2. **View Results**: See detected faces and matches
 3. **Register New Dog**: Click "Register This Dog" for unknowns
 4. **Monitor Stats**: Check dashboard for total dogs and device info
+
+### Live Video Detection (New!) 📹
+
+1. **Navigate to Live Mode**: Click "🎥 Live Mode" button or go to http://localhost:5000/live
+2. **Start Camera**: Click "▶️ Start Camera" button
+3. **Grant Permission**: Allow camera access when prompted by browser
+4. **Choose Mode**:
+   - **🎥 Live Stream**: Continuous real-time detection with bounding boxes
+   - **📷 Capture Photo**: Take single photo with detailed overlay
+5. **Adjust Settings**:
+   - Frame rate slider (1-10 FPS, default: 3 FPS)
+   - Toggle bounding boxes on/off
+   - Toggle labels on/off
+6. **Switch Camera**: Click "🔄 Switch Camera" to toggle front/back (mobile) or between webcams (desktop)
+7. **Register Unknown Dogs**: In Capture mode, fill in name/owner and click "Register Dog"
+
+### Camera Troubleshooting Tips
+- **Permission Denied**: Check browser settings and allow camera access
+- **Camera In Use**: Close other apps using the camera (Zoom, Teams, etc.)
+- **HTTPS Warning**: Use `localhost` for local testing (HTTPS not required)
+- **Mobile Issues**: See detailed error messages and tips in Camera Access Tips panel
 
 ## Testing
 

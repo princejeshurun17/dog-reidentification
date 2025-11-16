@@ -598,6 +598,17 @@
                 </div>
             </div>
 
+            <div class="settings-panel" style="background: #fff3cd; border: 2px solid #ffc107;">
+                <h3>ℹ️ Camera Access Tips</h3>
+                <ul style="margin: 10px 0 0 20px; color: #856404; line-height: 1.8;">
+                    <li><strong>Permission Denied:</strong> Check your browser/phone settings to allow camera access</li>
+                    <li><strong>HTTPS Required:</strong> Some browsers require HTTPS for camera access (localhost works too)</li>
+                    <li><strong>Camera in Use:</strong> Close other apps using the camera (Instagram, Zoom, etc.)</li>
+                    <li><strong>iOS Safari:</strong> Make sure you tap "Allow" when prompted for camera permission</li>
+                    <li><strong>Android Chrome:</strong> Check site permissions in browser settings if blocked</li>
+                </ul>
+            </div>
+
             <div class="detections-list" id="detectionsList">
                 <h3>Recent Detections</h3>
                 <div id="detectionsContainer"></div>
@@ -675,6 +686,11 @@
 
         async function startCamera(deviceId = null) {
             try {
+                // Check if getUserMedia is supported
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    throw new Error('Camera API not supported on this device/browser');
+                }
+
                 // Enumerate cameras on first start
                 if (availableCameras.length === 0) {
                     await enumerateCameras();
@@ -696,6 +712,7 @@
                     constraints.video.facingMode = facingMode;
                 }
 
+                console.log('[CAMERA] Requesting camera with constraints:', constraints);
                 stream = await navigator.mediaDevices.getUserMedia(constraints);
 
                 video.srcObject = stream;
@@ -717,7 +734,56 @@
                 }
             } catch (error) {
                 console.error('Error accessing camera:', error);
-                showNotification('Failed to access camera: ' + error.message, 'error');
+                
+                let errorMessage = 'Failed to access camera. ';
+                
+                // Provide specific error messages based on error type
+                if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+                    errorMessage += 'Camera permission denied. Please allow camera access in your browser/phone settings.';
+                } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+                    errorMessage += 'No camera found on this device.';
+                } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+                    errorMessage += 'Camera is already in use by another app. Please close other apps using the camera.';
+                } else if (error.name === 'OverconstrainedError') {
+                    errorMessage += 'Camera constraints not supported. Trying with fallback settings...';
+                    console.log('[CAMERA] Retrying with fallback constraints');
+                    
+                    // Retry with simpler constraints
+                    try {
+                        stream = await navigator.mediaDevices.getUserMedia({
+                            video: { facingMode: facingMode }
+                        });
+                        
+                        video.srcObject = stream;
+                        video.onloadedmetadata = () => {
+                            canvas.width = video.videoWidth;
+                            canvas.height = video.videoHeight;
+                        };
+                        
+                        document.getElementById('startBtn').disabled = true;
+                        document.getElementById('stopBtn').disabled = false;
+                        document.getElementById('takePhotoBtn').disabled = false;
+                        document.getElementById('switchCameraBtn').disabled = true;
+                        
+                        showNotification('Camera started with basic settings', 'success');
+                        
+                        if (currentMode === 'stream') {
+                            startProcessing();
+                        }
+                        return;
+                    } catch (retryError) {
+                        console.error('[CAMERA] Fallback also failed:', retryError);
+                        errorMessage = 'Failed to access camera. Please check permissions and try again.';
+                    }
+                } else if (error.name === 'TypeError') {
+                    errorMessage += 'Camera API not supported on this device/browser.';
+                } else if (error.name === 'SecurityError') {
+                    errorMessage += 'Camera blocked due to security policy. Please use HTTPS or check browser settings.';
+                } else {
+                    errorMessage += error.message || 'Unknown error occurred.';
+                }
+                
+                showNotification(errorMessage, 'error');
             }
         }
 

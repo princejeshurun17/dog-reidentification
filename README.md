@@ -20,6 +20,10 @@ This system consists of two separate services:
 - 🎯 60% similarity threshold with multi-level guardrails
 - 🛡️ Confidence indicators (High/Medium-High/Medium)
 - ⚡ GPU acceleration with CPU fallback
+- 📹 **Live video detection** with real-time streaming and bounding boxes
+- 🔄 **Camera switching** for mobile devices (front/back camera)
+- 📸 **Capture mode** with instant registration overlay
+- 📱 **Mobile-optimized** with comprehensive camera error handling
 - 📈 **84.1% accuracy** on PetFace dataset
 
 ## Prerequisites
@@ -47,7 +51,8 @@ d:\FYP\frontend\
 ├── frontend/              # Flask UI server
 │   ├── app.py
 │   └── templates/
-│       └── index.html
+│       ├── index.html         # Upload mode
+│       └── live.html          # Live video detection mode
 ├── tests/                 # Test scripts
 │   ├── test_system.py
 │   ├── quick_test.py
@@ -145,6 +150,64 @@ Open your browser and navigate to:
 ```
 http://127.0.0.1:5000
 ```
+
+## Usage
+
+### Upload Mode (Traditional)
+
+1. Open browser: `http://localhost:5000`
+2. Click "Upload Image" and select a dog photo
+3. View detection results:
+   - If dog is registered: See match with confidence score
+   - If dog is unknown: Option to register with name and owner info
+4. Registered dogs are added to database for future recognition
+
+### Live Video Detection Mode (New!)
+
+1. Navigate to: `http://localhost:5000/live`
+2. **Stream Mode**:
+   - Click "Start Camera" to begin live detection
+   - Real-time bounding boxes appear over detected dogs
+   - Color-coded boxes: Green (match), Orange (unknown), Blue (medium confidence)
+   - Adjust frame rate (1-10 FPS) based on performance
+   - Toggle bounding boxes and labels on/off
+3. **Capture Mode**:
+   - Switch to "Capture Photo" mode
+   - Click "Take Photo" to capture current frame
+   - View detailed results in overlay
+   - Register unknown dogs instantly with name/owner form
+4. **Camera Switching**:
+   - Click "Switch Camera" to toggle between cameras
+   - Mobile: Switches between front/back cameras
+   - Desktop: Cycles through all available webcams
+
+### Camera Troubleshooting
+
+**Permission Denied:**
+- **Browser**: Click the camera icon in address bar → Allow
+- **iOS Safari**: Tap "Allow" when prompted (required each session)
+- **Android Chrome**: Settings → Site Settings → Camera → Allow
+
+**Camera In Use:**
+- Close other apps using the camera (Instagram, Zoom, etc.)
+- On mobile: Force close background apps
+
+**HTTPS Required:**
+- Some browsers require HTTPS for camera access
+- Use `localhost` for local testing (HTTPS not required)
+- For remote access, set up HTTPS or use ngrok/similar
+
+**No Camera Detected:**
+- Check device has working camera
+- Try different browser (Chrome recommended)
+- Check system permissions (Windows Settings → Privacy → Camera)
+
+### Performance Tips
+
+- **Frame Rate**: Start with 3 FPS (default), increase if system handles well
+- **Latency**: ~170ms average processing time per frame
+- **Max Theoretical FPS**: ~6 FPS (based on processing latency)
+- **Mobile**: Use lower frame rates (1-3 FPS) for better battery life
 
 ## Usage
 
@@ -324,6 +387,42 @@ netstat -ano | findstr :5000
 taskkill /PID <PID> /F
 ```
 
+### Camera access denied/blocked
+
+**Solution**: Check browser permissions:
+```
+Chrome: Settings → Privacy and Security → Site Settings → Camera
+Firefox: Preferences → Privacy & Security → Permissions → Camera
+Safari: Preferences → Websites → Camera
+```
+
+**Mobile specific**:
+- **iOS**: Settings → Safari → Camera (must be "Ask")
+- **Android**: Settings → Apps → Chrome → Permissions → Camera
+
+### Camera "already in use" error
+
+**Solution**: Close other applications using camera:
+```powershell
+# Windows: Check camera processes
+Get-Process | Where-Object {$_.ProcessName -match "zoom|teams|skype"}
+```
+
+### Bounding boxes not appearing
+
+**Solution**: Check settings panel toggles:
+- Ensure "Show Bounding Boxes" is checked
+- Verify "Show Labels" is enabled if you want labels
+- Check browser console for JavaScript errors
+
+### High latency/low FPS in live mode
+
+**Solution**: Reduce processing load:
+- Lower frame rate to 1-2 FPS
+- Close other applications
+- Use GPU if available (check inference_service.py logs)
+- Reduce camera resolution (fallback constraints activate automatically)
+
 ## Testing
 
 ### Unit Tests
@@ -341,6 +440,7 @@ curl -X POST -F "file=@test_image.jpg" http://127.0.0.1:8000/infer
 
 ### Manual QA Checklist
 
+#### Upload Mode
 - [ ] Upload image with known dog → Match found
 - [ ] Upload image with unknown dog → Registration flow works
 - [ ] Register new dog → Appears in database
@@ -348,22 +448,51 @@ curl -X POST -F "file=@test_image.jpg" http://127.0.0.1:8000/infer
 - [ ] Stats page shows correct counts
 - [ ] History page shows recent identifications
 
+#### Live Video Mode
+- [ ] Camera starts successfully on desktop
+- [ ] Camera starts successfully on mobile (iOS/Android)
+- [ ] Bounding boxes appear over detected dogs
+- [ ] Color coding works (green=match, orange=unknown)
+- [ ] Frame rate adjustable (1-10 FPS)
+- [ ] Camera switching works (front/back on mobile)
+- [ ] Capture photo opens overlay with results
+- [ ] Registration form works in capture overlay
+- [ ] Unknown dogs can be registered instantly
+- [ ] Error messages display for camera issues
+
 ## Performance Notes
 
+### Upload Mode
 - **CPU Mode**: ~2-5 seconds per image
 - **GPU Mode (CUDA)**: ~0.5-1 second per image
 - **FAISS Search**: <0.1 seconds for databases under 10,000 entries
 - **Memory Usage**: ~1-2GB (CPU), ~3-4GB (GPU)
 
+### Live Video Mode
+- **Processing Latency**: ~170ms per frame average
+  - Detection: 45ms
+  - Embedding: 123ms
+  - Search: 2ms
+- **Recommended Frame Rate**: 3 FPS (333ms per frame)
+- **Max Theoretical FPS**: ~6 FPS (limited by processing time)
+- **Mobile Performance**: 1-3 FPS recommended for battery life
+- **Network Latency**: Additional 10-50ms depending on connection
+
 ## Future Enhancements
 
-- [ ] Multi-dog detection in single image (currently processes all faces)
+- [x] Live video detection with real-time streaming (COMPLETED)
+- [x] Camera switching for mobile devices (COMPLETED)
+- [x] Instant registration from capture overlay (COMPLETED)
+- [ ] Recording/playback of detection sessions
+- [ ] Multi-person collaborative monitoring
+- [ ] Alert system for specific dogs detected
 - [ ] Background retraining with new samples
 - [ ] Export/import database functionality
 - [ ] REST API authentication
 - [ ] Docker containerization
 - [ ] Batch processing mode
 - [ ] Web-based admin panel for managing dogs
+- [ ] Integration with IP cameras/RTSP streams
 
 ## License
 

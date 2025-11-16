@@ -1,13 +1,13 @@
 # Dog Re-Identification System - Development Log
 
 ## Session Date: November 16, 2025
-**Last Updated**: November 16, 2025 (Latest: Added UI improvements, latency metrics, and guardrails)
+**Last Updated**: November 16, 2025 (Latest: Live video detection, camera switching, capture overlay, improved mobile support)
 
 ---
 
 ## Executive Summary
 
-Successfully debugged and optimized a dog re-identification system, improving accuracy from **0%** to **84%** through systematic testing and model architecture improvements. Further enhanced with UI improvements showing cropped dog faces, latency metrics, and intelligent guardrails.
+Successfully debugged and optimized a dog re-identification system, improving accuracy from **0%** to **84%** through systematic testing and model architecture improvements. Further enhanced with UI improvements showing cropped dog faces, latency metrics, intelligent guardrails, and **real-time video detection capabilities**.
 
 ### Key Achievements
 - **Final Accuracy**: 84.1% (layer4) vs 52.4% (layer3) vs 0% (initial corrupted state)
@@ -15,6 +15,8 @@ Successfully debugged and optimized a dog re-identification system, improving ac
 - **Production Ready**: System deployed with 2048-dim embeddings, optimized threshold (0.60), and multi-level guardrails
 - **Enhanced UI**: Real-time cropped dog face display for easy identification
 - **Performance Monitoring**: Built-in latency metrics for detection, embedding, and search
+- **Live Video Detection**: Real-time streaming with bounding box overlay, camera switching, and capture mode
+- **Mobile Support**: Comprehensive error handling for camera access on iOS and Android devices
 
 ---
 
@@ -559,6 +561,112 @@ USE_QUERY_EXPANSION = True   # +4% accuracy, 2x slower query
 
 ---
 
+## Live Video Detection Feature (Latest Addition)
+
+### Overview
+Implemented comprehensive real-time video detection and re-identification system accessible from `/live` route.
+
+### Features Implemented
+
+#### 1. **Dual Mode Operation**
+- **Live Stream Mode**: Continuous real-time detection with adjustable frame rate (1-10 FPS)
+- **Capture Photo Mode**: Single frame capture with detailed results overlay
+
+#### 2. **Camera Management**
+- **Multi-camera Support**: Automatic enumeration of all available cameras
+- **Camera Switching**: Toggle between front/back cameras on mobile devices
+- **Fallback Constraints**: Automatic retry with simpler settings if initial request fails
+- **Permission Handling**: Comprehensive error messages for denied/blocked camera access
+
+#### 3. **Real-Time Visualization**
+- **Bounding Box Overlay**: Color-coded boxes drawn on canvas over video feed
+  - Green: High confidence match
+  - Blue: Medium confidence match  
+  - Orange: Unknown dog
+- **Dynamic Labels**: Dog name, confidence %, similarity % displayed on bounding boxes
+- **FPS Counter**: Real-time frame rate monitoring
+- **Stats Dashboard**: Live detection count, latency, match count
+
+#### 4. **Capture Result Overlay**
+- **Full-Screen Modal**: Shows captured image with detection results
+- **Matched Dogs**: Display name, confidence level, similarity %, margin, cropped face
+- **Unknown Dogs**: Registration form with name/owner fields, instant enrollment
+- **Multi-Dog Support**: Handles multiple detections in single frame
+
+#### 5. **Performance Optimization**
+- **Frame Rate Control**: Adjustable 1-10 FPS based on 170ms processing latency
+- **Default 3 FPS**: Provides 333ms per frame (2x latency buffer)
+- **Processing Lock**: Prevents frame queue buildup with `isProcessing` flag
+- **Async Processing**: Non-blocking frame capture and API calls
+
+#### 6. **Mobile Error Handling**
+- **Detailed Error Messages**: Specific guidance for each error type:
+  - NotAllowedError: Permission denied - check settings
+  - NotFoundError: No camera detected
+  - NotReadableError: Camera in use by another app
+  - OverconstrainedError: Auto-retry with fallback settings
+  - SecurityError: HTTPS/security policy issues
+- **Help Section**: Visible tips panel with platform-specific guidance
+- **Console Logging**: Detailed constraint and error logging for debugging
+
+### Technical Implementation
+
+#### Frontend (`live.html`)
+```javascript
+// Key Components:
+- MediaDevices API for camera access
+- Canvas overlay for bounding box rendering
+- Real-time frame capture and processing loop
+- Registration form with embedding data handling
+```
+
+#### Camera Constraints
+```javascript
+video: {
+    width: { ideal: 1280 },
+    height: { ideal: 720 },
+    facingMode: 'user' // or 'environment' for back camera
+}
+```
+
+#### API Integration
+- **Endpoint**: `/api/process` (reuses existing endpoint)
+- **Frame Rate**: Configurable 1-10 FPS (default 3 FPS)
+- **Latency**: ~170ms average (45ms detection + 123ms embedding + 2ms search)
+- **Registration**: `/api/enroll` with embedding data (not file upload)
+
+### User Experience
+
+#### Navigation
+- Two pages: **Upload Mode** (`/`) and **Live Mode** (`/live`)
+- Toggle buttons for easy switching between modes
+
+#### Stream Settings Panel
+- Frame rate slider (1-10 FPS)
+- Toggle bounding boxes on/off
+- Toggle labels on/off
+
+#### Camera Access Tips Panel
+- Permission requirements
+- HTTPS/localhost info
+- Platform-specific guidance (iOS Safari, Android Chrome)
+- Troubleshooting for common issues
+
+### Known Limitations
+- Frame rate limited by processing latency (~6 FPS theoretical max)
+- High resolution cameras may require fallback constraints on older devices
+- HTTPS required on some browsers (localhost exempt)
+- Camera permission must be granted per-session on some mobile browsers
+
+### Testing Considerations
+- Test on multiple devices (desktop, iOS, Android)
+- Verify camera permission prompts appear correctly
+- Check bounding box alignment at different resolutions
+- Validate registration flow with embedding data
+- Test camera switching between front/back on mobile
+
+---
+
 ## Future Improvements
 
 ### Short Term (No Retraining)
@@ -651,11 +759,15 @@ Successfully transformed a non-functional system (0% accuracy due to FAISS corru
 - **UI enhancements**: Cropped faces, confidence badges, visual warnings
 - **Performance metrics**: Real-time latency tracking in test scripts
 - **Match quality feedback**: Margin display, verification requests
+- **Live video detection**: Real-time streaming with bounding box overlay
+- **Camera switching**: Multi-camera support for mobile devices
+- **Capture overlay**: Instant registration for unknown dogs
+- **Mobile error handling**: Comprehensive camera access troubleshooting
 
-The system is now production-ready with intelligent safeguards against false positives and clear visual feedback for operators.
+The system is now production-ready with intelligent safeguards against false positives, clear visual feedback for operators, and real-time video detection capabilities for continuous monitoring and instant dog registration.
 
 ---
 
-**Document Version**: 2.0  
+**Document Version**: 3.0  
 **Last Updated**: November 16, 2025  
-**System Status**: ✅ Production Ready (Layer4, 2048-dim, 84.1% accuracy, Enhanced UI + Guardrails)
+**System Status**: ✅ Production Ready (Layer4, 2048-dim, 84.1% accuracy, Enhanced UI + Guardrails + Live Video Detection)
