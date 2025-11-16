@@ -11,7 +11,8 @@ from werkzeug.utils import secure_filename
 # Configuration
 UPLOAD_FOLDER = 'data/uploads'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'bmp'}
-INFERENCE_SERVICE_URL = 'http://127.0.0.1:8000'
+# Use environment variable for Docker, fallback to localhost for local development
+INFERENCE_SERVICE_URL = os.environ.get('BACKEND_URL', 'http://127.0.0.1:8000')
 MAX_FILE_SIZE = 16 * 1024 * 1024  # 16MB
 EMBEDDING_DIM = 2048  # Must match backend inference service (layer4)
 
