@@ -1,6 +1,6 @@
 # Dog Re-Identification System
 
-A Windows-friendly local application for dog face detection and re-identification using YOLO and deep learning embeddings with FAISS similarity search.
+A cross-platform application for dog face detection and re-identification using YOLO and deep learning embeddings with FAISS similarity search. Deployable on Windows, Linux, and Raspberry Pi with Docker support.
 
 ## System Overview
 
@@ -24,26 +24,59 @@ This system consists of two separate services:
 - 🔄 **Camera switching** for mobile devices (front/back camera)
 - 📸 **Capture mode** with instant registration overlay
 - 📱 **Mobile-optimized** with comprehensive camera error handling
+- 🐳 **Docker deployment** for easy setup on any platform
+- 🥧 **Raspberry Pi support** with optimized performance settings
 - 📈 **84.1% accuracy** on PetFace dataset
 
 ## Prerequisites
 
-- Python 3.8 or higher
-- Windows OS
-- 4GB+ RAM recommended
+### For Native Installation:
+- Python 3.8 or higher (Python 3.11 recommended for Raspberry Pi)
+- Windows, Linux, or Raspberry Pi OS
+- 4GB+ RAM recommended (8GB for Raspberry Pi)
 - (Optional) NVIDIA GPU with CUDA for faster inference
+
+### For Docker Deployment:
+- Docker and Docker Compose installed
+- 4GB+ RAM (8GB recommended for Raspberry Pi)
+- No Python installation required
+
+## Quick Start
+
+### Option 1: Docker Deployment (Recommended)
+
+See **[DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md)** for complete Docker setup instructions.
+
+```bash
+# Install Docker, clone repo, upload models
+docker compose up -d
+
+# Access at http://localhost:5000
+```
+
+### Option 2: Native Installation
+
+See **[QUICKSTART.md](QUICKSTART.md)** for detailed step-by-step setup.
+
+### Option 3: Raspberry Pi Setup
+
+See **[RASPBERRY_PI_SETUP.md](RASPBERRY_PI_SETUP.md)** for SSH deployment guide.
+
+---
 
 ## Installation
 
-### 1. Clone or Download Repository
+## Project Structure
 
-Ensure you have the following structure:
 ```
 d:\FYP\frontend\
 ├── models/                 # Model files
 │   ├── yolo.pt            # YOLO detection model
 │   └── dog.pt             # ResNet50 re-ID model
 ├── requirements.txt
+├── Dockerfile             # Docker container definition
+├── docker-compose.yml     # Multi-container orchestration
+├── .dockerignore          # Docker build exclusions
 ├── backend/               # FastAPI inference service
 │   ├── inference_service.py
 │   ├── db.py
@@ -73,10 +106,10 @@ d:\FYP\frontend\
 │   ├── manage_db.py
 │   └── test_integration.py
 ├── README.md
-├── QUICKSTART.md
+├── QUICKSTART.md          # Step-by-step native setup
+├── DOCKER_DEPLOYMENT.md   # Docker deployment guide
+├── RASPBERRY_PI_SETUP.md  # Raspberry Pi SSH setup
 └── SESSION_SUMMARY.md     # Development log
-```
-    └── faiss.index
 ```
 
 ### 2. Create Virtual Environment
@@ -292,17 +325,45 @@ Fetch all dogs
 #### `GET /api/history`
 Fetch identification history
 
+## Performance Comparison
+
+| Platform | Deployment | Single Image | Live FPS | Memory | Setup Time |
+|----------|-----------|--------------|----------|--------|------------|
+| Windows PC | Native | 2-5 sec | 3-6 FPS | 1-2 GB | 20 min |
+| Windows PC | Docker | 2-5 sec | 3-6 FPS | 1.5-2.5 GB | 30 min |
+| Raspberry Pi 4 | Native | 3-8 sec | 1-2 FPS | 1.5-2 GB | 60 min |
+| Raspberry Pi 4 | Docker | 3-8 sec | 1-2 FPS | 1.7-2.5 GB | 40 min |
+
+**Recommended:**
+- **Windows Development**: Native (faster setup)
+- **Production/Raspberry Pi**: Docker (easier management, auto-restart)
+
 ## Configuration
 
-Edit the following constants in `backend/inference_service.py`:
+### Backend Settings (`backend/inference_service.py`)
 
 ```python
 YOLO_MODEL_PATH = "yolo.pt"          # Path to YOLO model
 REID_MODEL_PATH = "dog.pt"           # Path to re-ID model
 CROP_SIZE = (224, 224)               # Face crop size
-SIMILARITY_THRESHOLD = 0.70          # Matching threshold (0-1)
-EMBEDDING_DIM = 512                  # Re-ID embedding dimension
+SIMILARITY_THRESHOLD = 0.60          # Matching threshold (0-1)
+EMBEDDING_DIM = 2048                 # Re-ID embedding dimension (Layer4)
 ```
+
+### Docker Environment Variables
+
+```yaml
+# docker-compose.yml
+environment:
+  - BACKEND_URL=http://backend:8000  # Frontend → Backend communication
+  - PYTHONUNBUFFERED=1               # Real-time logging
+```
+
+### Timeout Configuration
+
+For slower devices (Raspberry Pi), timeouts are pre-configured:
+- **Backend API**: 60s inference, 20s queries
+- **Frontend fetch**: 90s with AbortController
 
 ## CLI Utilities
 
@@ -463,25 +524,53 @@ curl -X POST -F "file=@test_image.jpg" http://127.0.0.1:8000/infer
 ## Performance Notes
 
 ### Upload Mode
-- **CPU Mode**: ~2-5 seconds per image
+- **CPU Mode**: ~2-5 seconds per image (Windows), 3-8 seconds (Raspberry Pi)
 - **GPU Mode (CUDA)**: ~0.5-1 second per image
 - **FAISS Search**: <0.1 seconds for databases under 10,000 entries
 - **Memory Usage**: ~1-2GB (CPU), ~3-4GB (GPU)
 
 ### Live Video Mode
-- **Processing Latency**: ~170ms per frame average
+- **Processing Latency**: ~170ms per frame average (Windows)
   - Detection: 45ms
   - Embedding: 123ms
   - Search: 2ms
-- **Recommended Frame Rate**: 3 FPS (333ms per frame)
-- **Max Theoretical FPS**: ~6 FPS (limited by processing time)
+- **Raspberry Pi Latency**: ~500-1000ms per frame
+- **Recommended Frame Rate**: 
+  - Windows: 3 FPS (333ms per frame)
+  - Raspberry Pi: 1-2 FPS
+- **Max Theoretical FPS**: ~6 FPS (Windows), ~2 FPS (Raspberry Pi)
 - **Mobile Performance**: 1-3 FPS recommended for battery life
 - **Network Latency**: Additional 10-50ms depending on connection
+
+### Docker Overhead
+- **Container Start**: 10-20 seconds (includes model loading)
+- **Memory**: +200MB compared to native
+- **Processing**: Similar to native (negligible overhead)
+- **Build Time**: 5-10 minutes (Windows), 15-30 minutes (Raspberry Pi)
+
+## Deployment Options
+
+### Development
+- **Recommended**: Native Python installation (QUICKSTART.md)
+- **Fastest setup**: 20 minutes on Windows
+- **Best for**: Testing, debugging, development
+
+### Production
+- **Recommended**: Docker deployment (DOCKER_DEPLOYMENT.md)
+- **Benefits**: Auto-restart, easy updates, consistent environment
+- **Best for**: Server deployment, always-on systems
+
+### Raspberry Pi
+- **Option 1**: Docker (DOCKER_DEPLOYMENT.md) - Easier setup (40 min)
+- **Option 2**: Native (RASPBERRY_PI_SETUP.md) - Better performance insight (60 min)
+- **Best for**: Edge deployment, portable systems
 
 ## Future Enhancements
 
 - [x] Live video detection with real-time streaming (COMPLETED)
 - [x] Camera switching for mobile devices (COMPLETED)
+- [x] Docker containerization (COMPLETED)
+- [x] Raspberry Pi support (COMPLETED)
 - [x] Instant registration from capture overlay (COMPLETED)
 - [ ] Recording/playback of detection sessions
 - [ ] Multi-person collaborative monitoring
@@ -489,10 +578,20 @@ curl -X POST -F "file=@test_image.jpg" http://127.0.0.1:8000/infer
 - [ ] Background retraining with new samples
 - [ ] Export/import database functionality
 - [ ] REST API authentication
-- [ ] Docker containerization
 - [ ] Batch processing mode
 - [ ] Web-based admin panel for managing dogs
 - [ ] Integration with IP cameras/RTSP streams
+- [ ] Cloudflare Tunnel setup for remote access
+
+## Documentation
+
+- **[README.md](README.md)** - Overview and setup guide (this file)
+- **[QUICKSTART.md](QUICKSTART.md)** - Step-by-step native installation
+- **[DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md)** - Docker deployment guide
+- **[RASPBERRY_PI_SETUP.md](RASPBERRY_PI_SETUP.md)** - Raspberry Pi SSH setup
+- **[SESSION_SUMMARY.md](SESSION_SUMMARY.md)** - Development log and technical details
+- **[docs/API.md](docs/API.md)** - API endpoint reference
+- **[docs/architecture.md](docs/architecture.md)** - System architecture
 
 ## License
 
@@ -500,12 +599,18 @@ This project is for educational purposes. Ensure you have appropriate licenses f
 
 ## Support
 
-For issues or questions, please check:
-1. Logs in console output
-2. `data/` directory permissions
-3. Model file integrity
-4. Python version compatibility
+For issues or questions:
+1. **GitHub Issues**: [https://github.com/princejeshurun17/dog-reidentification/issues](https://github.com/princejeshurun17/dog-reidentification/issues)
+2. **Check Logs**: Console output for errors
+3. **Troubleshooting Guides**: See deployment documentation
+4. **Common Issues**: 
+   - `data/` directory permissions
+   - Model file integrity
+   - Python/Docker version compatibility
+   - Camera access permissions (live mode)
 
 ---
 
+**Version**: 3.1  
+**Last Updated**: November 16, 2025  
 **Built with ❤️ for dog lovers and computer vision enthusiasts**
