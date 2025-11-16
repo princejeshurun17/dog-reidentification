@@ -556,4 +556,5 @@ async def reload_faiss():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    # Use 0.0.0.0 to allow external connections (required for Docker)
+    uvicorn.run(app, host="0.0.0.0", port=8000)
